@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>できないのは誰のせい？ 教室リデザインシミュレーター</title>
+  <style>
+    :root {
+      --blue: #5ba8d9;
+      --blue-soft: #e8f5ff;
+      --green: #63b97a;
+      --green-soft: #eaf8ee;
+      --yellow: #f2c94c;
+      --yellow-soft: #fff8dc;
+      --red: #e86d6d;
+      --red-soft: #fff0f0;
+      --ink: #263238;
+      --muted: #60717b;
+      --paper: #ffffff;
+      --line: #d8e7ee;
+      --shadow: 0 18px 45px rgba(52, 100, 130, .14);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(232, 245, 255, .92), rgba(234, 248, 238, .9) 48%, rgba(255, 248, 220, .92)),
+        radial-gradient(circle at 12% 12%, rgba(91, 168, 217, .22), transparent 26%),
+        radial-gradient(circle at 88% 18%, rgba(242, 201, 76, .22), transparent 23%);
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      width: 100%;
+      animation: fadeIn .35s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero,
+    .card {
+      background: rgba(255, 255, 255, .94);
+      border: 1px solid rgba(216, 231, 238, .9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: clamp(24px, 5vw, 54px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #286781;
+      background: var(--blue-soft);
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(2rem, 7vw, 4.4rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 4vw, 2.55rem);
+      line-height: 1.2;
+      margin-bottom: 14px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 1.12rem;
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.85;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+    }
+
+    .primary {
+      width: 100%;
+      min-height: 56px;
+      border: 0;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #3797c9, #49b877);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.05rem;
+      padding: 15px 22px;
+      box-shadow: 0 12px 24px rgba(55, 151, 201, .25);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .primary:hover,
+    .choice:hover {
+      transform: translateY(-2px);
+    }
+
+    .primary:active,
+    .choice:active {
+      transform: translateY(0);
+    }
+
+    .layout {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      padding: clamp(18px, 3.5vw, 28px);
+    }
+
+    .rule-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      background: #fbfeff;
+      border-radius: var(--radius);
+      padding: 14px;
+      line-height: 1.65;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 10px 0 14px;
+      background: linear-gradient(180deg, rgba(238, 249, 248, .98), rgba(238, 249, 248, .72));
+      backdrop-filter: blur(8px);
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 700;
+    }
+
+    .progress {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(91, 168, 217, .16);
+      overflow: hidden;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow));
+      transition: width .35s ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .stat-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .9rem;
+      font-weight: 800;
+      color: #365a66;
+      margin-bottom: 8px;
+    }
+
+    .meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #edf5f7;
+      overflow: hidden;
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      transition: width .35s ease;
+    }
+
+    .safety { background: var(--blue); }
+    .participation { background: var(--green); }
+    .understanding { background: var(--yellow); }
+
+    .case-title {
+      color: #1e6684;
+    }
+
+    .theme {
+      color: #2b7d56;
+      background: var(--green-soft);
+    }
+
+    .speech {
+      position: relative;
+      border: 2px solid #ffe08a;
+      background: #fffdf0;
+      border-radius: var(--radius);
+      padding: 18px;
+      font-weight: 800;
+      color: #775b00;
+      line-height: 1.7;
+    }
+
+    .speech::before {
+      content: "";
+      position: absolute;
+      left: 28px;
+      bottom: -12px;
+      width: 20px;
+      height: 20px;
+      background: #fffdf0;
+      border-right: 2px solid #ffe08a;
+      border-bottom: 2px solid #ffe08a;
+      transform: rotate(45deg);
+    }
+
+    .ai-box {
+      border-left: 6px solid var(--blue);
+      background: var(--blue-soft);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .ai-label {
+      font-weight: 900;
+      color: #1d6685;
+      margin-bottom: 6px;
+    }
+
+    .choices {
+      display: grid;
+      gap: 12px;
+    }
+
+    .choice {
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      text-align: left;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: start;
+      min-height: 72px;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .choice[disabled] {
+      cursor: default;
+      opacity: .72;
+      transform: none;
+    }
+
+    .choice.selected.match { border-color: var(--green); background: var(--green-soft); }
+    .choice.selected.near { border-color: var(--yellow); background: var(--yellow-soft); }
+    .choice.selected.miss { border-color: var(--red); background: var(--red-soft); }
+
+    .letter {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      background: #ecf7fb;
+      color: #1e6684;
+      font-weight: 900;
+    }
+
+    .feedback {
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 2px solid;
+      animation: fadeIn .25s ease both;
+    }
+
+    .feedback.match { border-color: var(--green); background: var(--green-soft); }
+    .feedback.near { border-color: var(--yellow); background: var(--yellow-soft); }
+    .feedback.miss { border-color: var(--red); background: var(--red-soft); }
+
+    .feedback-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .delta-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 4px;
+    }
+
+    .delta {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, .08);
+      font-weight: 800;
+      color: #365a66;
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 94px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: #1e6684;
+      font-weight: 900;
+    }
+
+    .diagnosis {
+      font-size: clamp(1.45rem, 4vw, 2.4rem);
+      color: #247a59;
+      line-height: 1.28;
+      font-weight: 900;
+      margin: 12px 0;
+    }
+
+    .learning {
+      border: 2px solid #ffe08a;
+      background: #fff9df;
+      border-radius: var(--radius);
+      padding: 18px;
+      font-weight: 900;
+      color: #665016;
+      line-height: 1.7;
+      font-size: 1.08rem;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; align-items: stretch; }
+      .rule-grid,
+      .stats { grid-template-columns: 1fr; }
+      .choice { grid-template-columns: 38px 1fr; padding: 14px; }
+      .letter { width: 34px; height: 34px; }
+      .topbar { position: relative; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="screen" class="screen"></section>
+  </main>
+
+  <script>
+    const cases = [
+      {
+        caseTitle: "第1問：返事はある。でも移動できない",
+        theme: "肢体不自由",
+        profile: "車いすを使っている児童。理科は好きで、実験にも参加したいと思っている。しかし理科室は2階にあり、校舎にはエレベーターがない。AIは「移動ルートを確認し、エレベーターを使えるように調整する」と提案したが、この学校にはエレベーターがない。",
+        coreQuestion: "参加できない理由は、身体だけにあるのだろうか？",
+        turns: [
+          {
+            turnTitle: "ターン1：まず何を確認する？",
+            aiSuggestion: "教師が抱えて理科室まで移動させれば、実験に参加できます。",
+            question: "あなたなら最初に何を考えますか？",
+            choices: [
+              {
+                label: "A",
+                text: "安全に気をつけて、教師が毎回抱えて移動させる",
+                result: "near",
+                score: 1,
+                changes: { safety: -5, participation: 10, understanding: -5 },
+                feedback: "参加の機会をつくろうとしている点は大切です。ただし、教師が抱える方法は事故のリスクや継続性の問題があります。"
+              },
+              {
+                label: "B",
+                text: "理科室での実験は難しいので、その児童だけ教室で別課題にする",
+                result: "miss",
+                score: 0,
+                changes: { safety: 10, participation: -20, understanding: -10 },
+                feedback: "安全は守りやすくなりますが、本人だけ学びの機会が分けられてしまいます。参加条件を変えられないか考える余地があります。"
+              },
+              {
+                label: "C",
+                text: "実験の目的を確認し、場所・教材・役割分担を変えて同じ学習に参加できる方法を考える",
+                result: "match",
+                score: 2,
+                changes: { safety: 10, participation: 15, understanding: 10 },
+                feedback: "いいですね！身体だけでなく、授業の場所や方法を見直すことで参加条件を再設計しています。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン2：周囲の子どもにはどう伝える？",
+            aiSuggestion: "クラスメイトに手伝ってもらえば、みんなで支え合う学級になります。",
+            question: "この提案について、あなたならどうしますか？",
+            choices: [
+              {
+                label: "A",
+                text: "クラスメイトに毎回車いすを運ぶ係を任せる",
+                result: "miss",
+                score: 0,
+                changes: { safety: -15, participation: 5, understanding: -10 },
+                feedback: "助け合いは大切ですが、子どもに危険や責任を負わせすぎる可能性があります。"
+              },
+              {
+                label: "B",
+                text: "本人に確認したうえで、必要な配慮の理由をクラスにわかる範囲で共有する",
+                result: "match",
+                score: 2,
+                changes: { safety: 5, participation: 10, understanding: 15 },
+                feedback: "いいですね！本人の気持ちと個人情報に配慮しながら、周囲の理解をつくっています。"
+              },
+              {
+                label: "C",
+                text: "特別扱いと思われないよう、周囲には何も説明しない",
+                result: "near",
+                score: 1,
+                changes: { safety: 0, participation: 0, understanding: -10 },
+                feedback: "本人のプライバシーを守る視点はあります。ただし、説明がないことで誤解が生まれることもあります。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン3：最終的な参加方法を決める",
+            aiSuggestion: "できる範囲で参加させればよいでしょう。",
+            question: "よりよい支援として近いものはどれですか？",
+            choices: [
+              {
+                label: "A",
+                text: "実験の一部だけ見学し、危険な作業はすべて教師が行う",
+                result: "near",
+                score: 1,
+                changes: { safety: 10, participation: -5, understanding: 0 },
+                feedback: "安全面は考えられていますが、本人が学習に参加する機会が少なくなっています。"
+              },
+              {
+                label: "B",
+                text: "教室で同じ実験の観察や記録ができるようにし、本人が担える役割をつくる",
+                result: "match",
+                score: 2,
+                changes: { safety: 10, participation: 15, understanding: 10 },
+                feedback: "いいですね！同じ学習目標に向かって、参加方法を調整しています。"
+              },
+              {
+                label: "C",
+                text: "安全を優先し、理科実験の単元はレポート提出に置き換える",
+                result: "miss",
+                score: 0,
+                changes: { safety: 15, participation: -20, understanding: -5 },
+                feedback: "安全は大切ですが、参加の可能性を十分に検討する前に学びを狭めています。"
+              }
+            ]
+          }
+        ],
+        summary: "肢体不自由の支援では、身体の困難だけを見るのではなく、場所、教材、役割、周囲の理解を組み合わせて参加条件を考えることが大切です。"
+      },
+      {
+        caseTitle: "第2問：元気そう。でも途中で顔色が変わる",
+        theme: "病弱・身体虚弱",
+        profile: "心疾患のある児童。普段は元気そうに見えるため、周囲からは特別な配慮が必要に見えにくい。体育の持久走で、本人はがんばりたい気持ちがあるが、途中で顔色が悪くなることがある。",
+        coreQuestion: "元気そうに見える子に、どのような配慮が必要だろうか？",
+        turns: [
+          {
+            turnTitle: "ターン1：体育への参加をどう考える？",
+            aiSuggestion: "途中で休んでもよいと伝えれば、安全に参加できます。",
+            question: "この提案に足りない視点は何ですか？",
+            choices: [
+              {
+                label: "A",
+                text: "本人が休むと言えるように、事前に合図や休憩ルールを決めておく",
+                result: "match",
+                score: 2,
+                changes: { safety: 15, participation: 10, understanding: 5 },
+                feedback: "いいですね！『休んでいい』だけでなく、言い出しにくさを考えて具体的な仕組みにしています。"
+              },
+              {
+                label: "B",
+                text: "本人のがんばる気持ちを尊重して、他の児童と同じ距離を走らせる",
+                result: "miss",
+                score: 0,
+                changes: { safety: -20, participation: 5, understanding: -5 },
+                feedback: "本人の気持ちを尊重する姿勢はありますが、健康面のリスクを見落としています。"
+              },
+              {
+                label: "C",
+                text: "安全のため、体育には参加させず見学にする",
+                result: "near",
+                score: 1,
+                changes: { safety: 15, participation: -15, understanding: -5 },
+                feedback: "安全は守れますが、参加の可能性を狭めすぎているかもしれません。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン2：周囲の児童が『ずるい』と言った",
+            aiSuggestion: "病気だから仕方ないと説明すればよいでしょう。",
+            question: "あなたならどう対応しますか？",
+            choices: [
+              {
+                label: "A",
+                text: "本人の詳しい病名を説明して、周囲に納得してもらう",
+                result: "miss",
+                score: 0,
+                changes: { safety: -5, participation: 0, understanding: 5 },
+                feedback: "理解を得ようとする意図はありますが、本人の個人情報を広げすぎる危険があります。"
+              },
+              {
+                label: "B",
+                text: "誰にでも必要な配慮は違うことを、本人の情報を守りながらクラスで考える",
+                result: "match",
+                score: 2,
+                changes: { safety: 5, participation: 10, understanding: 15 },
+                feedback: "いいですね！個人情報を守りながら、クラス全体の理解を育てています。"
+              },
+              {
+                label: "C",
+                text: "周囲の児童には関係ないので、何も説明しない",
+                result: "near",
+                score: 1,
+                changes: { safety: 0, participation: 0, understanding: -10 },
+                feedback: "本人を守る意図はありますが、説明がないと誤解が残る可能性があります。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン3：欠席が続いた後の学習",
+            aiSuggestion: "授業資料を共有すれば、学習はつながります。",
+            question: "よりよい支援はどれですか？",
+            choices: [
+              {
+                label: "A",
+                text: "資料を送るだけでなく、重要点の説明や質問できる機会を用意する",
+                result: "match",
+                score: 2,
+                changes: { safety: 5, participation: 15, understanding: 5 },
+                feedback: "いいですね！資料共有だけでなく、学び直しや質問の機会まで考えられています。"
+              },
+              {
+                label: "B",
+                text: "欠席した分は家庭で自分で勉強してもらう",
+                result: "miss",
+                score: 0,
+                changes: { safety: 0, participation: -20, understanding: -5 },
+                feedback: "本人や家庭に負担が偏り、学びの途切れが大きくなる可能性があります。"
+              },
+              {
+                label: "C",
+                text: "登校できるようになってから、まとめて補習する",
+                result: "near",
+                score: 1,
+                changes: { safety: 5, participation: 0, understanding: 0 },
+                feedback: "補習は役立ちますが、それまで学びが止まってしまう可能性があります。"
+              }
+            ]
+          }
+        ],
+        summary: "病弱・身体虚弱の支援では、元気そうに見えるかどうかではなく、体調変動、学習の継続、周囲の理解を含めて考えることが大切です。"
+      },
+      {
+        caseTitle: "第3問：返事がない。でも見ている",
+        theme: "重度・重複障害",
+        profile: "言葉で返事をすることが難しい児童。好きな音楽が流れると、目線を向けたり、表情が少し変わったりすることがある。ただし、その反応が何を意味しているのかは、すぐには判断しにくい。",
+        coreQuestion: "小さな反応を、どう学びにつなげるか？",
+        turns: [
+          {
+            turnTitle: "ターン1：視線をどう受け止める？",
+            aiSuggestion: "視線を向けたので、やりたいという意思表示です。",
+            question: "この判断について、どう考えますか？",
+            choices: [
+              {
+                label: "A",
+                text: "視線が向いたので、すぐに『やりたい』と判断する",
+                result: "near",
+                score: 1,
+                changes: { safety: 0, participation: 10, understanding: -5 },
+                feedback: "小さな反応に気づいた点は大切です。ただし、視線だけで決めつけるのは危うい場合があります。"
+              },
+              {
+                label: "B",
+                text: "反応がはっきりしないので、理解していないと考える",
+                result: "miss",
+                score: 0,
+                changes: { safety: 0, participation: -20, understanding: -10 },
+                feedback: "反応が小さいだけで、理解していないとは限りません。表情や視線も大切な手がかりです。"
+              },
+              {
+                label: "C",
+                text: "視線、表情、身体の動きなどを複数回見て、意味を仮説として確かめる",
+                result: "match",
+                score: 2,
+                changes: { safety: 10, participation: 10, understanding: 10 },
+                feedback: "いいですね！小さな反応を尊重しつつ、決めつけずに確認しています。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン2：本人が選べる方法をつくる",
+            aiSuggestion: "教師が好きそうな活動を選んであげるとよいでしょう。",
+            question: "より主体性を大切にする支援はどれですか？",
+            choices: [
+              {
+                label: "A",
+                text: "教師が本人に合いそうな活動を選び、毎回同じ活動にする",
+                result: "near",
+                score: 1,
+                changes: { safety: 10, participation: 0, understanding: -5 },
+                feedback: "安定した活動には意味がありますが、本人が選ぶ機会が少なくなっています。"
+              },
+              {
+                label: "B",
+                text: "スイッチやカードなどを使い、本人が選択に関われる方法を試す",
+                result: "match",
+                score: 2,
+                changes: { safety: 5, participation: 15, understanding: 10 },
+                feedback: "いいですね！支援者が決めるのではなく、本人が選択に参加できる方法を考えています。"
+              },
+              {
+                label: "C",
+                text: "反応がわかりにくいので、選択活動は行わない",
+                result: "miss",
+                score: 0,
+                changes: { safety: 5, participation: -20, understanding: -10 },
+                feedback: "反応がわかりにくいからこそ、表出しやすい方法を探すことが大切です。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン3：学びとしてどう見る？",
+            aiSuggestion: "安心して過ごせれば、それで十分です。",
+            question: "この提案に加えたい視点は何ですか？",
+            choices: [
+              {
+                label: "A",
+                text: "安心を土台にしながら、反応や選択を学びの記録として積み重ねる",
+                result: "match",
+                score: 2,
+                changes: { safety: 10, participation: 15, understanding: 10 },
+                feedback: "いいですね！安心だけで終わらず、本人の反応を学びとして意味づけています。"
+              },
+              {
+                label: "B",
+                text: "安全で落ち着いていられるなら、学習目標は特に考えない",
+                result: "miss",
+                score: 0,
+                changes: { safety: 10, participation: -15, understanding: -10 },
+                feedback: "安心は大切ですが、教育の場では本人の学びや成長も考える必要があります。"
+              },
+              {
+                label: "C",
+                text: "できるだけ多くの活動を体験させ、反応を増やす",
+                result: "near",
+                score: 1,
+                changes: { safety: -5, participation: 10, understanding: 0 },
+                feedback: "経験を増やす視点はありますが、刺激が多すぎると疲れや不安につながることもあります。"
+              }
+            ]
+          }
+        ],
+        summary: "重度・重複障害の支援では、小さな反応を見逃さず、しかし決めつけず、本人の選択や学びにつなげていくことが大切です。"
+      },
+      {
+        caseTitle: "第4問：校外学習、行きたい。でも準備が多い",
+        theme: "医療的ケア",
+        profile: "経管栄養が必要な児童。本人は校外学習に行きたいと言っている。保護者も参加を希望しているが、学校側は移動中や現地でのケア、緊急時対応に不安を感じている。",
+        coreQuestion: "安全と参加は、どちらか一方しか選べないのか？",
+        turns: [
+          {
+            turnTitle: "ターン1：参加をどう判断する？",
+            aiSuggestion: "安全が最優先なので、無理に参加させない方がよいでしょう。",
+            question: "あなたなら最初に何をしますか？",
+            choices: [
+              {
+                label: "A",
+                text: "危険があるので、校外学習は欠席にする",
+                result: "miss",
+                score: 0,
+                changes: { safety: 15, participation: -25, understanding: -10 },
+                feedback: "安全への意識はありますが、参加の可能性を検討する前に機会を閉じています。"
+              },
+              {
+                label: "B",
+                text: "本人、保護者、看護師、管理職と相談し、必要な条件を整理する",
+                result: "match",
+                score: 2,
+                changes: { safety: 15, participation: 10, understanding: 10 },
+                feedback: "いいですね！教師だけで判断せず、チームで参加条件を整理しています。"
+              },
+              {
+                label: "C",
+                text: "保護者が付き添うなら参加してよいことにする",
+                result: "near",
+                score: 1,
+                changes: { safety: 5, participation: 10, understanding: -5 },
+                feedback: "参加に近づきますが、保護者だけに責任を寄せると学校としての支援体制が弱くなります。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン2：準備が多すぎると感じる",
+            aiSuggestion: "必要物品を持っていけば大丈夫です。",
+            question: "この提案に足りないものは何ですか？",
+            choices: [
+              {
+                label: "A",
+                text: "物品だけでなく、ケアの時間、場所、役割分担、緊急時対応を確認する",
+                result: "match",
+                score: 2,
+                changes: { safety: 15, participation: 10, understanding: 10 },
+                feedback: "いいですね！物だけでなく、誰がいつどこでどう動くかまで考えられています。"
+              },
+              {
+                label: "B",
+                text: "必要物品を多めに持っていけば対応できる",
+                result: "near",
+                score: 1,
+                changes: { safety: 5, participation: 5, understanding: -5 },
+                feedback: "物品の準備は大切ですが、それだけでは現地での判断や緊急対応が不十分です。"
+              },
+              {
+                label: "C",
+                text: "準備が多い活動は避け、校内活動に変更する",
+                result: "miss",
+                score: 0,
+                changes: { safety: 10, participation: -20, understanding: -10 },
+                feedback: "負担を減らす考えはありますが、参加のための条件整理をする前に活動を狭めています。"
+              }
+            ]
+          },
+          {
+            turnTitle: "ターン3：教師の役割を考える",
+            aiSuggestion: "医療的ケアが必要な子どもには、教師が医療の知識を身につけて対応すべきです。",
+            question: "教師の役割として適切なのはどれですか？",
+            choices: [
+              {
+                label: "A",
+                text: "教師が医療的ケアをすべて行えるように練習する",
+                result: "miss",
+                score: 0,
+                changes: { safety: -20, participation: 5, understanding: -10 },
+                feedback: "教師がすべてを担うのは危険です。専門職との役割分担が必要です。"
+              },
+              {
+                label: "B",
+                text: "教師は医療行為そのものより、子どもの学びと参加を支えるために連携する",
+                result: "match",
+                score: 2,
+                changes: { safety: 15, participation: 15, understanding: 10 },
+                feedback: "いいですね！教師の役割を、医療行為ではなく教育的参加の支援として捉えています。"
+              },
+              {
+                label: "C",
+                text: "医療的ケアは看護師の仕事なので、教師は関わらない",
+                result: "near",
+                score: 1,
+                changes: { safety: 5, participation: -5, understanding: -5 },
+                feedback: "専門職の役割を尊重する点は大切です。ただし、教師も学びや学校生活の面では関わる必要があります。"
+              }
+            ]
+          }
+        ],
+        summary: "医療的ケアでは、教師がすべてを担うのではなく、専門職と連携しながら、安全と参加を両立できる条件を整えることが大切です。"
+      }
+    ];
+
+    const screen = document.getElementById("screen");
+    const resultLabels = {
+      match: "いいですね！",
+      near: "おしい！",
+      miss: "注目してみよう！"
+    };
+    const statLabels = {
+      safety: "子どもの安心",
+      participation: "活動参加",
+      understanding: "周囲の理解"
+    };
+
+    let caseIndex = 0;
+    let turnIndex = 0;
+    let totalScore = 0;
+    let params = resetParams();
+    let selectedChoice = null;
+
+    function resetParams() {
+      return { safety: 50, participation: 50, understanding: 50 };
+    }
+
+    function clamp(value) {
+      return Math.max(0, Math.min(100, value));
+    }
+
+    function render(html) {
+      screen.className = "screen";
+      screen.innerHTML = html;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function totalTurnsPlayed() {
+      return caseIndex * 3 + turnIndex;
+    }
+
+    function progressPercent(extra = 0) {
+      return Math.round(((totalTurnsPlayed() + extra) / 12) * 100);
+    }
+
+    function statsHtml() {
+      return `
+        <div class="stats" aria-label="現在のパラメータ">
+          ${Object.keys(statLabels).map(key => `
+            <div class="stat">
+              <div class="stat-head"><span>${statLabels[key]}</span><span>${params[key]}</span></div>
+              <div class="meter"><span class="${key}" style="width:${params[key]}%"></span></div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function topbarHtml(extra = 0) {
+      return `
+        <div class="topbar">
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>進捗 ${Math.min(12, totalTurnsPlayed() + extra)} / 12</span>
+              <span>総合得点 ${totalScore} / 24</span>
+            </div>
+            <div class="progress" aria-label="進捗バー"><span style="width:${progressPercent(extra)}%"></span></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function showStart() {
+      render(`
+        <div class="hero">
+          <span class="badge">3ターン分岐型シミュレーションゲーム</span>
+          <h1>できないのは誰のせい？<br>教室リデザインシミュレーター</h1>
+          <p class="subtitle">AIの一見もっともらしい提案を読みながら、子どもの安心、活動参加、周囲の理解をどう両立するか考える教材です。</p>
+          <button class="primary" onclick="showRules()">ゲームを始める</button>
+        </div>
+      `);
+    }
+
+    function showRules() {
+      render(`
+        <div class="layout">
+          <div class="card">
+            <span class="badge">ルール説明</span>
+            <h2>唯一の答えを当てるゲームではありません</h2>
+            <p>各ケースで、AIの一見もっともらしい提案と3つの選択肢が表示されます。選択後、子どもの安心・活動参加・周囲の理解の変化とフィードバックを確認します。</p>
+            <div class="rule-grid">
+              <div class="mini"><strong>考える視点</strong><br>身体だけでなく、環境、授業方法、制度、関係性、本人の意思を含めます。</div>
+              <div class="mini"><strong>進め方</strong><br>4つのケースを順番に、各3ターンずつ進めます。</div>
+              <div class="mini"><strong>表示</strong><br>フィードバックは「いいですね！」「おしい！」「注目してみよう！」で示します。</div>
+            </div>
+            <button class="primary" onclick="startCase()">このケースを考える</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function startCase() {
+      params = resetParams();
+      turnIndex = 0;
+      selectedChoice = null;
+      showCaseIntro();
+    }
+
+    function showCaseIntro() {
+      const item = cases[caseIndex];
+      render(`
+        ${topbarHtml()}
+        <div class="layout">
+          <div class="card">
+            <span class="badge theme">${item.theme}</span>
+            <h2 class="case-title">${item.caseTitle}</h2>
+            <p>${item.profile}</p>
+            <div class="speech">${item.coreQuestion}</div>
+          </div>
+          ${statsHtml()}
+          <button class="primary" onclick="showTurn()">このケースを考える</button>
+        </div>
+      `);
+    }
+
+    function showTurn() {
+      selectedChoice = null;
+      const item = cases[caseIndex];
+      const turn = item.turns[turnIndex];
+      render(`
+        ${topbarHtml()}
+        <div class="layout">
+          ${statsHtml()}
+          <div class="card">
+            <span class="badge">${item.caseTitle}</span>
+            <h2>${turn.turnTitle}</h2>
+            <div class="ai-box">
+              <div class="ai-label">AIの一見もっともらしい提案</div>
+              <p>${turn.aiSuggestion}</p>
+            </div>
+            <h3>${turn.question}</h3>
+            <div class="choices">
+              ${turn.choices.map((choice, index) => `
+                <button class="choice" onclick="choose(${index})">
+                  <span class="letter">${choice.label}</span>
+                  <span>${choice.text}</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+      `);
+    }
+
+    function choose(choiceIndex) {
+      if (selectedChoice) return;
+      const turn = cases[caseIndex].turns[turnIndex];
+      const choice = turn.choices[choiceIndex];
+      selectedChoice = choice;
+      totalScore += choice.score;
+      Object.keys(choice.changes).forEach(key => {
+        params[key] = clamp(params[key] + choice.changes[key]);
+      });
+      showFeedback(choiceIndex);
+    }
+
+    function formatDelta(value) {
+      return value > 0 ? `+${value}` : `${value}`;
+    }
+
+    function showFeedback(choiceIndex) {
+      const item = cases[caseIndex];
+      const turn = item.turns[turnIndex];
+      const choice = turn.choices[choiceIndex];
+      render(`
+        ${topbarHtml(1)}
+        <div class="layout">
+          ${statsHtml()}
+          <div class="card">
+            <span class="badge">${turn.turnTitle}</span>
+            <h2>${turn.question}</h2>
+            <div class="choices">
+              ${turn.choices.map((option, index) => `
+                <button class="choice ${index === choiceIndex ? `selected ${choice.result}` : ""}" disabled>
+                  <span class="letter">${option.label}</span>
+                  <span>${option.text}</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+          <div class="feedback ${choice.result}">
+            <div class="feedback-title">${resultLabels[choice.result]}</div>
+            <p>${choice.feedback}</p>
+            <div class="delta-list">
+              ${Object.keys(choice.changes).map(key => `
+                <span class="delta">${statLabels[key]} ${formatDelta(choice.changes[key])}</span>
+              `).join("")}
+              <span class="delta">このターン ${choice.score}点</span>
+            </div>
+          </div>
+          <button class="primary" onclick="nextStep()">次へ</button>
+        </div>
+      `);
+    }
+
+    function nextStep() {
+      turnIndex += 1;
+      if (turnIndex >= cases[caseIndex].turns.length) {
+        showCaseSummary();
+      } else {
+        showTurn();
+      }
+    }
+
+    function showCaseSummary() {
+      const item = cases[caseIndex];
+      render(`
+        ${topbarHtml()}
+        <div class="layout">
+          ${statsHtml()}
+          <div class="card">
+            <span class="badge theme">ケースまとめ</span>
+            <h2>${item.caseTitle}</h2>
+            <p>${item.summary}</p>
+          </div>
+          <button class="primary" onclick="nextCase()">${caseIndex === cases.length - 1 ? "次へ" : "次のケースへ"}</button>
+        </div>
+      `);
+    }
+
+    function nextCase() {
+      caseIndex += 1;
+      if (caseIndex >= cases.length) {
+        showResult();
+      } else {
+        startCase();
+      }
+    }
+
+    function getDiagnosis(score) {
+      if (score <= 8) {
+        return {
+          type: "安全確認マスタータイプ",
+          text: "安全を大切に考えられています。ただし、安全だけで参加の機会を狭めすぎない視点も大切です。"
+        };
+      }
+      if (score <= 16) {
+        return {
+          type: "声かけチェッカータイプ",
+          text: "子どもへの配慮に気づけています。次は、環境やクラス全体をどう変えるかにも目を向けてみましょう。"
+        };
+      }
+      if (score <= 20) {
+        return {
+          type: "教室全体を見るファシリテータータイプ",
+          text: "本人だけでなく、周囲の子どもや授業環境も含めて考えられています。"
+        };
+      }
+      return {
+        type: "支援改善クリエイタータイプ",
+        text: "身体、環境、制度、関係性を組み合わせて、参加条件を再設計する視点があります。"
+      };
+    }
+
+    function showResult() {
+      const diagnosis = getDiagnosis(totalScore);
+      render(`
+        <div class="hero">
+          <span class="badge">総合診断</span>
+          <h1>${totalScore} / 24点</h1>
+          <div class="diagnosis">${diagnosis.type}</div>
+          <p>${diagnosis.text}</p>
+          <div class="learning">教師は子どもの身体を変えることはできない。けれど、参加条件を変えることはできる。</div>
+          <br>
+          <button class="primary" onclick="restart()">もう一度プレイする</button>
+        </div>
+      `);
+    }
+
+    function restart() {
+      caseIndex = 0;
+      turnIndex = 0;
+      totalScore = 0;
+      params = resetParams();
+      selectedChoice = null;
+      showStart();
+    }
+
+    showStart();
+  </script>
+</body>
+</html>
